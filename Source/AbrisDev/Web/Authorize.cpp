@@ -41,8 +41,14 @@ void UAuthorize::OnDemoCompleted(FHttpRequestPtr Req, FHttpResponsePtr Resp, boo
 
 	FJsonObjectConverter::JsonObjectStringToUStruct(Resp->GetContentAsString(), &t, 0, 0);
 
+	if (t.result.data.Num() < 1)
+	{
+		AuthorizeDelegatFail.Broadcast();
+		return;
+	}
 
 	FString d = t.result.data[0].info;
+	
 	demoID = d.Mid(d.Find("?"), d.Find("\"" , ESearchCase::IgnoreCase, ESearchDir::FromStart, d.Find("?")) - d.Find("?"));
 
 	GetCookDemo();

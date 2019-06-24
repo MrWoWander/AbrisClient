@@ -57,8 +57,27 @@ struct FRequest
 		FAbrisData result;
 };
 
+USTRUCT(BlueprintType)
+struct FFilledEntityMap
+{
+	GENERATED_BODY()
+
+		UPROPERTY(BlueprintReadWrite)
+		TMap<FString, FString> keys;
+};
+
+USTRUCT(BlueprintType)
+struct FFilledEntity
+{
+	GENERATED_BODY()
+
+		UPROPERTY(BlueprintReadWrite)
+		TArray<FFilledEntityMap> date;
+};
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEntityDelegat, FRequest, Req);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPropertyDelegat, FRequestProperty, Req);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FFilledEntityDelegat, FFilledEntity, Req);
 
 
 UCLASS()
@@ -72,7 +91,10 @@ public:
 	static UEntity* GetEntity();
 
 	UFUNCTION(BlueprintCallable)
-	static UEntity* GetProperty(FEntityData entity);
+	static UEntity* GetProperty(FString entity_id);
+
+	UFUNCTION(BlueprintCallable)
+		UEntity* GetFilledEntity(FString table_name);
 
 	UPROPERTY(BlueprintAssignable)
 	FEntityDelegat EntityDelegat;
@@ -80,8 +102,14 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FPropertyDelegat PropertyDelegat;
 
+	UPROPERTY(BlueprintAssignable)
+		FFilledEntityDelegat CurrentEntityDelegat;
+
 private:
 
 	void OnGetEntityCompleted(FHttpRequestPtr Req, FHttpResponsePtr Resp, bool success);
+	void OnGetCurrentEntityCompleted(FHttpRequestPtr Req, FHttpResponsePtr Resp, bool success);
 	void OnGetPropertyCompleted(FHttpRequestPtr Req, FHttpResponsePtr Resp, bool success);
+
+	void ReadJson(const FString& jsonData);
 };

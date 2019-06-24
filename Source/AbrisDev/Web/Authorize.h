@@ -9,6 +9,7 @@
 
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FAuthorizeDelegat);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FAuthorizeDelegatFail);
 
 USTRUCT()
 struct FDemoData
@@ -51,6 +52,8 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FAuthorizeDelegat AuthorizeDelegat;
+	UPROPERTY(BlueprintAssignable)
+	FAuthorizeDelegatFail AuthorizeDelegatFail;
 
 private:
 
