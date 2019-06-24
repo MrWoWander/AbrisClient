@@ -6,9 +6,11 @@
 #include "UObject/NoExportTypes.h"
 #include "RequestClass.h"
 #include "PropertyType.h"
+#include "AddEntityType.h"
 #include "Entity.generated.h"
 
 
+struct FAddEntity;
 USTRUCT(BlueprintType)
 struct FEntityData
 {
@@ -78,9 +80,14 @@ struct FFilledEntity
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEntityDelegat, FRequest, Req);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPropertyDelegat, FRequestProperty, Req);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FFilledEntityDelegat, FFilledEntity, Req);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FAddEntityDelegat);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FDellEntityDelegat);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FAddEntityFailFDelegat);
 
 
-UCLASS()
+
+
+UCLASS(BlueprintType)
 class ABRISDEV_API UEntity : public UObject, public RequestClass
 {
 	GENERATED_BODY()
@@ -94,6 +101,9 @@ public:
 	static UEntity* GetProperty(FString entity_id);
 
 	UFUNCTION(BlueprintCallable)
+	UEntity* DelEntity(FString value);
+
+	UFUNCTION(BlueprintCallable)
 		UEntity* GetFilledEntity(FString table_name);
 
 	UPROPERTY(BlueprintAssignable)
@@ -103,13 +113,28 @@ public:
 	FPropertyDelegat PropertyDelegat;
 
 	UPROPERTY(BlueprintAssignable)
+		FAddEntityDelegat AddEntityDelegat;
+
+	UPROPERTY(BlueprintAssignable)
+		FDellEntityDelegat DellEntityDelegat;
+
+	UPROPERTY(BlueprintAssignable)
+		FAddEntityFailFDelegat AddEntityFailDelegat;
+
+	UPROPERTY(BlueprintAssignable)
 		FFilledEntityDelegat CurrentEntityDelegat;
+
+	UFUNCTION(BlueprintCallable)
+	static UEntity* AddEntity(FAddEntity entity);
 
 private:
 
 	void OnGetEntityCompleted(FHttpRequestPtr Req, FHttpResponsePtr Resp, bool success);
 	void OnGetCurrentEntityCompleted(FHttpRequestPtr Req, FHttpResponsePtr Resp, bool success);
 	void OnGetPropertyCompleted(FHttpRequestPtr Req, FHttpResponsePtr Resp, bool success);
+	
+	void OnAddEntityCompleted(FHttpRequestPtr Req, FHttpResponsePtr Resp, bool success);
+	void OnDelEntityCompleted(FHttpRequestPtr Req, FHttpResponsePtr Resp, bool success);
 
 	void ReadJson(const FString& jsonData);
 };

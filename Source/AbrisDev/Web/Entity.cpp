@@ -28,6 +28,17 @@ UEntity* UEntity::GetProperty(FString entity_id)
 	return obj;
 }
 
+UEntity* UEntity::DelEntity(FString value)
+{
+	HttpRequest = CreateRequest(AbriseUrlMode::DEMO);
+	HttpRequest->SetContentAsString("jsonrpc=2.0&method=deleteEntitiesByKey&params=%5B%7B%22entityName%22%3A%22entity%22%2C%22schemaName%22%3A%22meta%22%2C%22key%22%3A%22entity_id%22%2C%22value%22%3A%22" + value + "%22%7D%5D");
+
+	HttpRequest->OnProcessRequestComplete().BindUObject(this, &UEntity::OnDelEntityCompleted);
+	HttpRequest->ProcessRequest();
+
+	return this;
+}
+
 UEntity* UEntity::GetFilledEntity(FString table_name)
 {
 	HttpRequest = CreateRequest(AbriseUrlMode::DEMO);
@@ -37,6 +48,18 @@ UEntity* UEntity::GetFilledEntity(FString table_name)
 	HttpRequest->ProcessRequest();
 
 	return this;
+}
+
+UEntity* UEntity::AddEntity(FAddEntity entity)
+{
+	auto obj = NewObject<UEntity>();
+	obj->HttpRequest = CreateRequest(AbriseUrlMode::DEMO);
+	obj->HttpRequest->SetContentAsString("jsonrpc=2.0&method=addEntities&params=%5B%7B%22entityName%22%3A%22entity%22%2C%22schemaName%22%3A%22meta%22%2C%22fields%22%3A%5B%7B%22entity_id%22%3A%22" + FGenericPlatformHttp::UrlEncode(entity.entity_id) + "%22%2C%22schema_name%22%3A%22" + FGenericPlatformHttp::UrlEncode(entity.schema_name) + "%22%2C%22table_name%22%3A%22" + FGenericPlatformHttp::UrlEncode(entity.table_name) + "%22%2C%22title%22%3A%22" + FGenericPlatformHttp::UrlEncode(entity.title) + "%22%2C%22primarykey%22%3A%22" + FGenericPlatformHttp::UrlEncode(entity.primarykey) + "%22%2C%22table_type%22%3A%22" + FGenericPlatformHttp::UrlEncode(entity.table_type) + "%22%2C%22view_definition%22%3A%22%22%2C%22base_entity_id%22%3A%22" + FGenericPlatformHttp::UrlEncode(entity.base_entity_id) + "%22%7D%5D%2C%22files%22%3A%5B%5D%2C%22key%22%3A%22entity_id%22%2C%22types%22%3Anull%7D%5D");
+
+	obj->HttpRequest->OnProcessRequestComplete().BindUObject(obj, &UEntity::OnAddEntityCompleted);
+	obj->HttpRequest->ProcessRequest();
+	
+	return obj;
 }
 
 void UEntity::OnGetEntityCompleted(FHttpRequestPtr Req, FHttpResponsePtr Resp, bool success)
@@ -81,6 +104,40 @@ void UEntity::OnGetPropertyCompleted(FHttpRequestPtr Req, FHttpResponsePtr Resp,
 		UE_LOG(LogTemp, Log, TEXT("%s"), *t.result.data[i].title)
 
 	PropertyDelegat.Broadcast(t);
+}
+
+void UEntity::OnAddEntityCompleted(FHttpRequestPtr Req, FHttpResponsePtr Resp, bool success)
+{
+	if (!success)
+		return;
+
+	UE_LOG(LogTemp, Log, TEXT("%s"), *Resp->GetContentAsString());
+
+	const TSharedRef<TJsonReader<TCHAR>> JsonReader = TJsonReaderFactory<TCHAR>::Create(Resp->GetContentAsString());
+	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
+
+	if (FJsonSerializer::Deserialize(JsonReader, JsonObject) && JsonObject.IsValid())
+	{
+	
+		if (JsonObject->GetArrayField("error").Num() == 0)
+		{
+			AddEntityDelegat.Broadcast();
+		} else
+		{
+			AddEntityFailDelegat.Broadcast();
+		}
+	}
+
+}
+
+void UEntity::OnDelEntityCompleted(FHttpRequestPtr Req, FHttpResponsePtr Resp, bool success)
+{
+	if (!success)
+		return;
+
+	UE_LOG(LogTemp, Log, TEXT("%s"), *Resp->GetContentAsString());
+
+	DellEntityDelegat.Broadcast();
 }
 
 void UEntity::ReadJson(const FString& jsonData)
